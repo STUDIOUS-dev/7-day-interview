@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-base: #051616;
+    --bg-surface: #0B1F1F;
+    --bg-elevated: #122626;
+    --accent-primary: #5EEAD4;
+    --accent-hover: #2DD4BF;
+    --accent-muted: rgba(94, 234, 212, 0.13); /* ~13% */
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #475569;
+    --border-subtle: #1E3434;
+    --border-active: rgba(94, 234, 212, 0.25); /* 25% */
+    --danger: #F87171;
+    --success: #4ADE80;
+    --warning: #FBBF24;
+  }
+
+  body {
+    @apply bg-bg-base text-text-primary font-sans antialiased;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-bg-base;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border-subtle rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-accent-muted;
+  }
+}

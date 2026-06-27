@@ -1,0 +1,40 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Dependencies and virtual environments
+node_modules/
+venv/
+.venv/
+
+# Build, test, and language caches
+dist/
+build/
+.next/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage/
+.coverage
+
+# Runtime and local data
+uploads/
+logs/
+*.log
+*.sqlite3
+
+# Editors and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Generated project inventory
+structure.txt
