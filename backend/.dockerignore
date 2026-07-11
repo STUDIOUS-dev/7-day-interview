@@ -1,0 +1,52 @@
+# Docker build exclusions
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Local uploads (ephemeral storage — use Supabase Storage in production)
+uploads/
+
+# Environment files with secrets
+.env
+.env.*
+!.env.production.example
+!.env.example
+
+# Git
+.git/
+.gitignore
+
+# Development / testing
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage/
+.coverage
+tests/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

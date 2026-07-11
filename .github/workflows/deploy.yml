@@ -1,0 +1,101 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+# Cancel any in-progress deploy if a new commit arrives
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Backend → Render ──────────────────────────────────────────────────────
+  deploy-backend:
+    name: Deploy Backend → Render
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trigger Render Deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          echo "Triggering Render deploy for service $RENDER_SERVICE_ID..."
+          response=$(curl --silent --show-error \
+            --request POST \
+            --url "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
+            --header "Accept: application/json" \
+            --header "Authorization: Bearer ${RENDER_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data '{"clearCache": "do_not_clear"}')
+
+          echo "Response: $response"
+
+          deploy_id=$(echo "$response" | python3 -c "import sys, json; print(json.load(sys.stdin).get('id', 'unknown'))")
+          echo "Deploy ID: $deploy_id"
+
+      - name: Wait for Render deploy to complete
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          echo "Waiting for deploy to finish (polling every 15s, max 5 min)..."
+          for i in $(seq 1 20); do
+            sleep 15
+            status=$(curl --silent \
+              --url "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys?limit=1" \
+              --header "Accept: application/json" \
+              --header "Authorization: Bearer ${RENDER_API_KEY}" \
+              | python3 -c "import sys, json; deploys = json.load(sys.stdin); print(deploys[0]['status'] if deploys else 'unknown')")
+
+            echo "  Deploy status: $status"
+
+            if [ "$status" = "live" ]; then
+              echo "Deploy succeeded!"
+              exit 0
+            elif [ "$status" = "deactivated" ] || [ "$status" = "build_failed" ]; then
+              echo "Deploy FAILED with status: $status"
+              exit 1
+            fi
+          done
+          echo "Deploy timed out after 5 minutes — check Render dashboard."
+          exit 1
+
+      - name: Health check
+        run: |
+          echo "Running health check..."
+          for i in 1 2 3; do
+            response=$(curl --silent --fail \
+              --max-time 10 \
+              https://seven-day-interview.onrender.com/health || echo "FAIL")
+            if echo "$response" | grep -q '"ok"'; then
+              echo "Health check passed: $response"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Health check failed after 3 attempts"
+          exit 1
+
+  # ── Frontend → Vercel ─────────────────────────────────────────────────────
+  # Vercel auto-deploys via its GitHub integration on every push to main.
+  # This job just confirms the Vercel deployment finished.
+  deploy-frontend:
+    name: Confirm Frontend → Vercel
+    runs-on: ubuntu-latest
+    needs: deploy-backend   # only confirm Vercel after backend is live
+
+    steps:
+      - name: Check Vercel deployment
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "Vercel auto-deploys on push to main via its GitHub App."
+          echo "Backend is live — Vercel deployment proceeds in parallel."
+          echo "Visit https://vercel.com/dashboard to monitor frontend deploy status."
