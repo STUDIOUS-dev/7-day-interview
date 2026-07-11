@@ -14,6 +14,7 @@ variable is missing.
 import os
 import sys
 import warnings
+from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 from pathlib import Path
 from typing import Literal
 
@@ -92,19 +93,36 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _normalize_database_url(self) -> "Settings":
-        """Ensure DATABASE_URL uses the asyncpg driver.
+        """Ensure DATABASE_URL uses the asyncpg driver and correct SSL param.
 
-        Supabase (and most providers) give plain ``postgresql://`` URLs.
-        This app uses async SQLAlchemy everywhere, so the URL must be
-        ``postgresql+asyncpg://``.  Normalise once at startup so that
-        every consumer (database.py, alembic/env.py) gets the right
-        dialect automatically.
+        Supabase (and most providers) give plain ``postgresql://`` URLs
+        with ``?sslmode=require``. This app uses async SQLAlchemy everywhere,
+        so the URL must be ``postgresql+asyncpg://``.
+        
+        Additionally, asyncpg does not understand the psycopg2-style
+        ``sslmode`` query parameter. SQLAlchemy's asyncpg dialect expects
+        ``ssl`` instead (e.g., ``?ssl=require``).
         """
         url = self.DATABASE_URL
+        if not url:
+            return self
+
+        # 1. Normalize scheme
         if url.startswith("postgresql://"):
-            self.DATABASE_URL = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgres://"):
-            self.DATABASE_URL = url.replace("postgres://", "postgresql+asyncpg://", 1)
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+
+        # 2. Normalize query parameters (sslmode -> ssl)
+        parsed = urlparse(url)
+        if parsed.query:
+            qs = parse_qsl(parsed.query)
+            # Replace 'sslmode' with 'ssl'
+            normalized_qs = [("ssl", v) if k == "sslmode" else (k, v) for k, v in qs]
+            new_query = urlencode(normalized_qs)
+            url = urlunparse(parsed._replace(query=new_query))
+
+        self.DATABASE_URL = url
         return self
 
     # ── Backward compatibility ──────────────────────────────────────────────
