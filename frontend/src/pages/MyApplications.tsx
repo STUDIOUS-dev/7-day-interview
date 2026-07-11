@@ -13,7 +13,6 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import { useApplicationStore, Application } from '@/store/applicationStore';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 

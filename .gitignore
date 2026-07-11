@@ -1,7 +1,12 @@
 # Secrets and local configuration
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
+backend/.env.*
+!backend/.env.example
+!backend/.env.production.example
+# Frontend production env is safe to commit (only public URLs, no secrets)
+!frontend/.env.production
 *.pem
 *.key
 *.p12
@@ -17,6 +22,7 @@ dist/
 build/
 .next/
 __pycache__/
+*.pyc
 *.py[cod]
 .pytest_cache/
 .mypy_cache/

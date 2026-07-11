@@ -27,7 +27,7 @@ interface ApplicationDetail {
 interface InterviewDetail {
   id: string;
   status: 'pending' | 'in_progress' | 'completed';
-  transcript: { role: string; content: string }[];
+  transcript: { role: 'ai' | 'user'; content: string }[];
   ai_score?: number | null;
   ai_feedback?: string | null;
   started_at?: string | null;

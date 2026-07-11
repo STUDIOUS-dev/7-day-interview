@@ -77,14 +77,6 @@ export default function CandidateDashboard() {
     return map;
   }, [myApplications]);
 
-  // Extract all unique skills from all jobs for the filter chips
-  const allSkills = useMemo(() => {
-    const skills = new Set<string>();
-    jobs.forEach((job) => {
-      job.requirements.forEach((req) => skills.add(req));
-    });
-    return Array.from(skills).slice(0, 15); // Show top 15 skills
-  }, [jobs]);
 
   // Client-side skill filter (skills aren't searched server-side)
   const filteredJobs = useMemo(() => {
