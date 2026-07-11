@@ -88,6 +88,25 @@ class Settings(BaseSettings):
             return list({*dev_origins, *prod_origins})  # deduplicated
         return dev_origins
 
+    # ── URL normalization ────────────────────────────────────────────────────
+
+    @model_validator(mode="after")
+    def _normalize_database_url(self) -> "Settings":
+        """Ensure DATABASE_URL uses the asyncpg driver.
+
+        Supabase (and most providers) give plain ``postgresql://`` URLs.
+        This app uses async SQLAlchemy everywhere, so the URL must be
+        ``postgresql+asyncpg://``.  Normalise once at startup so that
+        every consumer (database.py, alembic/env.py) gets the right
+        dialect automatically.
+        """
+        url = self.DATABASE_URL
+        if url.startswith("postgresql://"):
+            self.DATABASE_URL = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgres://"):
+            self.DATABASE_URL = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        return self
+
     # ── Backward compatibility ──────────────────────────────────────────────
 
     @model_validator(mode="after")
