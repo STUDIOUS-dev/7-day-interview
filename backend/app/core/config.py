@@ -113,12 +113,18 @@ class Settings(BaseSettings):
         elif url.startswith("postgres://"):
             url = url.replace("postgres://", "postgresql+asyncpg://", 1)
 
-        # 2. Normalize query parameters (sslmode -> ssl)
+        # 2. Normalize query parameters (sslmode -> ssl, strip pgbouncer)
         parsed = urlparse(url)
         if parsed.query:
             qs = parse_qsl(parsed.query)
-            # Replace 'sslmode' with 'ssl'
-            normalized_qs = [("ssl", v) if k == "sslmode" else (k, v) for k, v in qs]
+            normalized_qs = []
+            for k, v in qs:
+                if k == "sslmode":
+                    normalized_qs.append(("ssl", v))
+                elif k == "pgbouncer":
+                    pass  # asyncpg doesn't accept pgbouncer kwarg
+                else:
+                    normalized_qs.append((k, v))
             new_query = urlencode(normalized_qs)
             url = urlunparse(parsed._replace(query=new_query))
 
