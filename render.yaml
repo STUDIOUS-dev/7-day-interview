@@ -59,8 +59,8 @@ services:
       - key: SUPABASE_URL
         value: https://nnxyvwodgxbuiuutapsx.supabase.co
 
-      - key: SUPABASE_KEY
-        sync: false            # Set manually: Supabase anon key
+      - key: SUPABASE_ANON_KEY
+        sync: false            # Set manually: Supabase anon key (optional)
 
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false            # Set manually: Supabase service role key

@@ -13,6 +13,7 @@ variable is missing.
 
 import os
 import sys
+import warnings
 from pathlib import Path
 from typing import Literal
 
@@ -53,7 +54,7 @@ class Settings(BaseSettings):
 
     # ── Supabase ────────────────────────────────────────────────────────────
     SUPABASE_URL: str = ""
-    SUPABASE_KEY: str = ""                    # anon/public key
+    SUPABASE_ANON_KEY: str = ""               # anon/public key (optional)
     SUPABASE_SERVICE_ROLE_KEY: str = ""       # server-side privileged key
     SUPABASE_STORAGE_BUCKET: str = "resumes"
     SUPABASE_STORAGE_BUCKET_PUBLIC: bool = False
@@ -87,6 +88,21 @@ class Settings(BaseSettings):
             return list({*dev_origins, *prod_origins})  # deduplicated
         return dev_origins
 
+    # ── Backward compatibility ──────────────────────────────────────────────
+
+    @model_validator(mode="after")
+    def _migrate_legacy_supabase_key(self) -> "Settings":
+        """Map deprecated SUPABASE_KEY → SUPABASE_ANON_KEY."""
+        legacy = os.getenv("SUPABASE_KEY", "")
+        if legacy and not self.SUPABASE_ANON_KEY:
+            warnings.warn(
+                "SUPABASE_KEY is deprecated — rename to SUPABASE_ANON_KEY",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            self.SUPABASE_ANON_KEY = legacy
+        return self
+
     # ── Startup validation ──────────────────────────────────────────────────
 
     @model_validator(mode="after")
@@ -100,7 +116,7 @@ class Settings(BaseSettings):
             "REDIS_URL": self.REDIS_URL,
             "GOOGLE_API_KEY": self.GOOGLE_API_KEY,
             "SUPABASE_URL": self.SUPABASE_URL,
-            "SUPABASE_KEY": self.SUPABASE_KEY,
+            "SUPABASE_SERVICE_ROLE_KEY": self.SUPABASE_SERVICE_ROLE_KEY,
         }
 
         missing = [k for k, v in required.items() if not v]
